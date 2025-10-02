@@ -53,3 +53,82 @@ jobs:
         with:
           name: WebDesk-Windows-x64
           path: WebDesk.exe
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: "1.81"
+          target: ${{ matrix.arch }}-apple-darwin
+          override: true
+          profile: minimal
+
+      - name: Install dependencies
+        run: |
+          brew install cmake pkg-config nasm yasm
+
+      - name: Install vcpkg dependencies
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git ~/vcpkg
+          cd ~/vcpkg
+          ./bootstrap-vcpkg.sh
+          export VCPKG_ROOT=~/vcpkg
+          ./vcpkg install libvpx:${{ matrix.arch }}-osx libyuv:${{ matrix.arch }}-osx opus:${{ matrix.arch }}-osx aom:${{ matrix.arch }}-osx
+
+      - name: Build WebDesk
+        run: |
+          export VCPKG_ROOT=~/vcpkg
+          cargo build --release --target ${{ matrix.arch }}-apple-darwin
+
+      - name: Create app bundle
+        run: |
+          mkdir -p WebDesk.app/Contents/MacOS
+          mkdir -p WebDesk.app/Contents/Resources
+          cp target/${{ matrix.arch }}-apple-darwin/release/rustdesk WebDesk.app/Contents/MacOS/WebDesk
+          cp res/icon.icns WebDesk.app/Contents/Resources/ || echo "No icns file"
+
+          cat > WebDesk.app/Contents/Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>WebDesk</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.webspot.webdesk</string>
+              <key>CFBundleName</key>
+              <string>WebDesk</string>
+              <key>CFBundleVersion</key>
+              <string>1.4.0</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "WebDesk" \
+            --window-pos 200 120 \
+            --window-size 600 300 \
+            --icon-size 100 \
+            --app-drop-link 450 120 \
+            "WebDesk-${{ matrix.arch }}.dmg" \
+            "WebDesk.app" || hdiutil create -volname WebDesk -srcfolder WebDesk.app -ov -format UDZO WebDesk-${{ matrix.arch }}.dmg
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebDesk-macOS-${{ matrix.arch }}
+          path: WebDesk-${{ matrix.arch }}.dmg
