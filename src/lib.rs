@@ -71,3 +71,4 @@ pub mod privacy_mode;
 
 #[cfg(windows)]
 pub mod virtual_display_manager;
+pub mod webdesk_config;
