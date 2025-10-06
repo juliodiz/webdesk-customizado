@@ -1,0 +1,65 @@
+name: Build Windows Pre-configured
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  RENDEZVOUS_SERVER: "webdesk.webspot.com.br:21115"
+  RELAY_SERVER: "webdesk.webspot.com.br:21116"
+  API_SERVER: "webdesk.webspot.com.br"
+  KEY: "zt6UorL6EOviO9s+QNS55HL5XIxJ2aDXzuK2dXT+oaQ="
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: '1.4.2'  # Use official 1.4.2 tag
+          submodules: recursive
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.75
+          target: x86_64-pc-windows-msvc
+          override: true
+          profile: minimal
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+
+      - name: Install vcpkg dependencies
+        run: |
+          $ErrorActionPreference = "Stop"
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          cd C:\vcpkg
+          git checkout 6f29f12e82a8293156836ad81cc9bf5af41fe836
+          .\bootstrap-vcpkg.bat
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          .\vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
+        shell: pwsh
+
+      - name: Build with Flutter
+        run: |
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          python build.py --flutter --hwcodec --vram
+        shell: pwsh
+
+      - name: Package
+        run: |
+          cd flutter\build\windows\x64\runner\Release
+          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\..\WebDesk-PreConfigured.zip
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebDesk-Windows-PreConfigured
+          path: WebDesk-PreConfigured.zip
