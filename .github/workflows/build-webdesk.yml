@@ -96,7 +96,7 @@ jobs:
       - name: Build WebDesk
         run: |
           export VCPKG_ROOT=~/vcpkg
-          cargo build --release --target ${{ matrix.arch }}-apple-darwin
+          cargo build --release --features inline --target ${{ matrix.arch }}-apple-darwin
 
       - name: Create app bundle
         run: |
