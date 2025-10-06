@@ -37,6 +37,11 @@ jobs:
           .\vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
         shell: pwsh
 
+      - name: Generate inline files
+        run: |
+          python res/inline-sciter.py
+        shell: pwsh
+
       - name: Build WebDesk
         run: |
           $env:VCPKG_ROOT = "C:\vcpkg"
