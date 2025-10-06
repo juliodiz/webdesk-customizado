@@ -1,0 +1,14 @@
+name: Build WebDesk (Flutter)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Call official Flutter build
+    uses: ./.github/workflows/flutter-build.yml
+    with:
+      upload-artifact: true
+      upload-tag: "webdesk"
