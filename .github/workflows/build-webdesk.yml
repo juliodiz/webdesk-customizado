@@ -40,7 +40,7 @@ jobs:
       - name: Build WebDesk
         run: |
           $env:VCPKG_ROOT = "C:\vcpkg"
-          cargo build --release --target x86_64-pc-windows-msvc
+          cargo build --release --features inline --target x86_64-pc-windows-msvc
         shell: pwsh
 
       - name: Rename executable
