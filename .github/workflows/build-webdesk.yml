@@ -84,7 +84,14 @@ jobs:
           cd ~/vcpkg
           ./bootstrap-vcpkg.sh
           export VCPKG_ROOT=~/vcpkg
-          ./vcpkg install libvpx:${{ matrix.arch }}-osx libyuv:${{ matrix.arch }}-osx opus:${{ matrix.arch }}-osx aom:${{ matrix.arch }}-osx
+          # Map Rust arch to vcpkg arch: x86_64->x64, aarch64->arm64
+          VCPKG_ARCH="${{ matrix.arch }}"
+          if [ "$VCPKG_ARCH" = "x86_64" ]; then
+            VCPKG_ARCH="x64"
+          elif [ "$VCPKG_ARCH" = "aarch64" ]; then
+            VCPKG_ARCH="arm64"
+          fi
+          ./vcpkg install libvpx:${VCPKG_ARCH}-osx libyuv:${VCPKG_ARCH}-osx opus:${VCPKG_ARCH}-osx aom:${VCPKG_ARCH}-osx
 
       - name: Build WebDesk
         run: |
