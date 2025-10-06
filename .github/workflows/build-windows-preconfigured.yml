@@ -19,7 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: '1.4.2'  # Use official 1.4.2 tag
           submodules: recursive
 
       - name: Install Rust
