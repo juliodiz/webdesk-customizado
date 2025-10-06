@@ -96,14 +96,27 @@ jobs:
       - name: Build WebDesk
         run: |
           export VCPKG_ROOT=~/vcpkg
-          cargo build --release --features inline --target ${{ matrix.arch }}-apple-darwin
+          cargo build --release --target ${{ matrix.arch }}-apple-darwin
 
       - name: Create app bundle
         run: |
           mkdir -p WebDesk.app/Contents/MacOS
           mkdir -p WebDesk.app/Contents/Resources
           cp target/${{ matrix.arch }}-apple-darwin/release/rustdesk WebDesk.app/Contents/MacOS/WebDesk
-          cp res/icon.icns WebDesk.app/Contents/Resources/ || echo "No icns file"
+
+          # Create icns from WebSpot logo
+          mkdir -p WebDesk.iconset
+          sips -z 16 16     res/icon.png --out WebDesk.iconset/icon_16x16.png
+          sips -z 32 32     res/icon.png --out WebDesk.iconset/icon_16x16@2x.png
+          sips -z 32 32     res/icon.png --out WebDesk.iconset/icon_32x32.png
+          sips -z 64 64     res/icon.png --out WebDesk.iconset/icon_32x32@2x.png
+          sips -z 128 128   res/icon.png --out WebDesk.iconset/icon_128x128.png
+          sips -z 256 256   res/icon.png --out WebDesk.iconset/icon_128x128@2x.png
+          sips -z 256 256   res/icon.png --out WebDesk.iconset/icon_256x256.png
+          sips -z 512 512   res/icon.png --out WebDesk.iconset/icon_256x256@2x.png
+          sips -z 512 512   res/icon.png --out WebDesk.iconset/icon_512x512.png
+          cp res/icon.png WebDesk.iconset/icon_512x512@2x.png
+          iconutil -c icns WebDesk.iconset -o WebDesk.app/Contents/Resources/AppIcon.icns
 
           cat > WebDesk.app/Contents/Info.plist << EOF
           <?xml version="1.0" encoding="UTF-8"?>
@@ -116,8 +129,14 @@ jobs:
               <string>com.webspot.webdesk</string>
               <key>CFBundleName</key>
               <string>WebDesk</string>
+              <key>CFBundleIconFile</key>
+              <string>AppIcon</string>
               <key>CFBundleVersion</key>
               <string>1.4.0</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.4.0</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>10.14</string>
           </dict>
           </plist>
           EOF
